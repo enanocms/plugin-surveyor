@@ -1,22 +1,24 @@
 <?php
 /*
 Plugin Name: Survey/Poll plugin
-Plugin URI: http://enano.homelinux.org/Survey_plugin
+Plugin URI: http://enanocms.org/Survey_plugin
 Description: Adds a customizable poll to your sidebar. You can have any number of options, and the poll is randomly selected from a list of enabled polls. <b>Important:</b> When first loaded, this plugin creates the following tables in your Enano database: enano_polls, enano_poll_options, enano_poll_results
 Author: Dan Fuhry
-Version: 1.0.1
-Author URI: http://enano.homelinux.org/
+Version: 0.3
+Author URI: http://enanocms.org/
 
 Changelog:
   9/27/06:
   Updated to be valid XHTML 1.1
   11/2/07:
   Made compatible with Loch Ness and later (oops!)
+  11/29/08:
+  One change a year! Moved to Mercurial and brought up to date with naming conventions.
 */
 
 /*
- * Enano - an open-source CMS capable of wiki functions, Drupal-like sidebar blocks, and everything in between
- * Version 1.0.1 (Loch Ness)
+ * Surveyor
+ * Version 0.3
  * Copyright (C) 2006-2007 Dan Fuhry
  *
  * This program is Free Software; you can redistribute and/or modify it under the terms of the GNU General Public License
