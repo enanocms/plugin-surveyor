@@ -55,7 +55,7 @@ define('ENANO_SURVEYOR_TABLES_CREATED', 'true');
                          poll_id mediumint(5),
                          item_id mediumint(5),
                          user_id mediumint(8),
-                         ip_addr varchar(10)
+                         ip_addr varchar(39)
                        );');
   if(!$e) $db->_die('Surveyor plugin: error creating table '.table_prefix.'poll_results.');
   
@@ -88,7 +88,8 @@ class Surveyor_Plugin {
     $poll_id = $l[$ques]['pid'];
     unset($l[$ques]['pid']);
     if(!$poll_id) die_semicritical('Surveyor plugin error', 'Invalid poll ID: '.$poll_id);
-    $q = $db->sql_query('SELECT * FROM '.table_prefix.'poll_results WHERE poll_id='.$poll_id.' AND ( ip_addr=\''.mysql_real_escape_string(ip2hex($_SERVER['REMOTE_ADDR'])).'\' OR user_id='.$session->user_id.' );');
+    $uidbit = $session->user_logged_in ? 'OR user_id='.$session->user_id : '';
+    $q = $db->sql_query('SELECT * FROM '.table_prefix.'poll_results WHERE poll_id='.$poll_id.' AND ( ip_addr=\''.$db->escape($_SERVER['REMOTE_ADDR']).'\' ' . $uidbit . ' );');
     if(!$q) $db->_die('Error obtaining vote result information');
     if($db->numrows() > 0)
     {
@@ -189,7 +190,8 @@ function __enanoVoteAjaxhandler($allow_vote = true)
   global $db, $session, $paths, $template, $plugins; // Common objects
   $ret = '';
   if(!isset($_REQUEST['poll_id'])) { die_semicritical('Critical error in plugin', '$_REQUEST[\'poll_id\'] is not set'); $paths->main_page(); exit; }
-  if(!preg_match('/^([0-9]+)$/', $_REQUEST['poll_id'])) die('Hacking attempt'); // Prevents SQL injection from the URL
+  if(isset($_GET['poll_id']) && !preg_match('/^([0-9]+)$/', $_GET['poll_id'])) die('Hacking attempt'); // Prevents SQL injection from the URL
+  if(isset($_POST['poll_id']) && !preg_match('/^([0-9]+)$/', $_POST['poll_id'])) die('Hacking attempt'); // Prevents SQL injection from the URL
   if(isset($_GET['results']))
   {
     $q = $db->sql_query('SELECT p.poll_id AS pid,o.item_id AS oid,p.poll_question AS q,o.option_value AS v FROM '.table_prefix.'polls p, '.table_prefix.'poll_options o WHERE p.poll_id=o.poll_id AND p.poll_id=\''.$_GET['poll_id'].'\';');
@@ -262,13 +264,14 @@ function __enanoVoteAjaxhandler($allow_vote = true)
     if(isset($_GET['redirect']) && $_GET['redirect'] == 'no')
     {
       header('Content-type: text/plain');
-      $q = $db->sql_query('SELECT * FROM '.table_prefix.'poll_results WHERE poll_id='.$_POST['poll_id'].' AND ( ip_addr=\''.mysql_real_escape_string(ip2hex($_SERVER['REMOTE_ADDR'])).'\' OR user_id='.$session->user_id.' );');
+      $uidbit = $session->user_logged_in ? 'OR user_id='.$session->user_id : '';
+      $q = $db->sql_query('SELECT * FROM '.table_prefix.'poll_results WHERE poll_id='.$_POST['poll_id'].' AND ( ip_addr=\''.$db->escape($_SERVER['REMOTE_ADDR']).'\' ' . $uidbit . ' );');
       if(!$q) $db->_die('Error obtaining vote result information');
       if($db->numrows() > 0)
       {
         die('Looks like you already voted in this poll.');
       }
-      $q = $db->sql_query('INSERT INTO '.table_prefix.'poll_results(poll_id,item_id,ip_addr,user_id) VALUES('.$_POST['poll_id'].', '.$_POST['item_id'].', \''.ip2hex($_SERVER['REMOTE_ADDR']).'\', '.$session->user_id.');');
+      $q = $db->sql_query('INSERT INTO '.table_prefix.'poll_results(poll_id,item_id,ip_addr,user_id) VALUES('.$_POST['poll_id'].', '.$_POST['item_id'].', \''.$db->escape($_SERVER['REMOTE_ADDR']).'\', '.$session->user_id.');');
       if(!$q) $db->_die('Your vote could not be inserted into the results table.');
       $ret .= 'Your vote has been cast.';
     } else {
